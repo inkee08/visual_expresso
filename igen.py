@@ -1,6 +1,6 @@
 from PIL import Image, ImageDraw, ImageFont
 
-def create_image(text, width=1080, height=1080, font_family="fonts/Roboto-Regular.ttf", 
+def create_image(text, width=1080, height=1080, font_family="fonts/MontserratAlternates-Regular.ttf", 
                      font_size=45, font_color="darkblue", bg_color="white", 
                      output_path="text_image.png"):
     
