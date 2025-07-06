@@ -7,9 +7,11 @@ username, password = v.getauth()
 shots = v.getshots(username, password)
 
 if shots:
+    max_videos = 4
+    a = 0
     for i in shots['data']:
         shot = v.getshot(username, password, i['id'])
-        if shot:
+        if shot and a <= max_videos:
             name = shot['start_time'].split('.')[0]
             name = name.replace(':', '_')
 
@@ -39,3 +41,4 @@ if shots:
 
             file_path = f"output/{name}.png"
             igen.create_image(text, output_path=f'{file_path}', font_size=64)
+        a += 1
