@@ -25,7 +25,7 @@ def createanimation(espresso_data, fps=10, display_fps=30):
 
     # Set ticks to appear only at integer locations
     ax1.yaxis.set_major_locator(MultipleLocator(1))
-    ax2.xaxis.set_major_locator(MultipleLocator(1))
+    ax2.xaxis.set_major_locator(MultipleLocator(2))
     ax2.yaxis.set_major_locator(MultipleLocator(5))
     
     ax1.tick_params(colors='none', bottom=False, left=True, labelbottom=False, which='both')
@@ -50,7 +50,7 @@ def createanimation(espresso_data, fps=10, display_fps=30):
     pressure_data = [float(i) for i in espresso_data['data']['espresso_pressure']]
     flow_data = [float(i) for i in espresso_data['data']['espresso_flow']]
     flow_goal_data = [float(i) for i in espresso_data['data']['espresso_flow_goal']]
-    flow_goal_weight_data = [float(i) for i in espresso_data['data']['espresso_flow_weight']]
+    flow_weight_data = [float(i) for i in espresso_data['data']['espresso_flow_weight']]
     basket_temp_data = [float(i) for i in espresso_data['data']['espresso_temperature_basket']]
     total_time = max(timestamps)
     time_per_frame = 1.0 / fps  # Real time per frame
@@ -79,29 +79,32 @@ def createanimation(espresso_data, fps=10, display_fps=30):
     # Initialize empty line for temperature chart
     line5, = ax2.plot([], [], '#ee7733', linewidth=lw, label='Basket Temp (°C)')
 
+    highest = [max(pressure_data), max(flow_data), max(flow_weight_data)]
+    xlimit = max(highest)
+
     # Set up the main chart axes ranges (pressure + flow)
     ax1.set_xlim(0, total_time)
-    ax1.set_ylim(0, max(pressure_data) * 1.5)
+    # ax1.set_ylim(0, max(pressure_data) * 1.5)
+    padding = 1
+    ax1.set_ylim(0, xlimit + padding)
 
-    ax1_flow.set_ylim(0, max(flow_data) * 1.5)
-    ax1_flow_weight.set_ylim(0, max(flow_goal_weight_data) * 1.5)
+    ax1_flow.set_ylim(0, xlimit + padding)
+    ax1_flow_weight.set_ylim(0, xlimit + padding)
 
     # Set up the temperature chart axes ranges
     ax2.set_xlim(0, total_time)
     ax2.set_ylim(min(basket_temp_data) - 2, max(basket_temp_data) + 4)
 
-    for i in range(1, int(max(pressure_data) * 1.5)+1):
+    for i in range(1, int(xlimit + padding)+1):
         ax1.axhline(y=i, color='#c8c8c8', linestyle='-', alpha=0.5, linewidth=1)
     for i in range(0, int(max(basket_temp_data)) + 5, 5):
         ax2.axhline(y=i, color='#c8c8c8', linestyle='-', alpha=0.5, linewidth=1)
 
-    # Create combined legend below the plot
-    # lines = [line1, line2, line4, line5]
-    # labels = ['Pressure (bar)', 'Flow (ml/s)', 'Weight Flow (g/s)', 'Basket Temp (°C)']
-    lines = [line1, line5, line2, line4]
-    labels = ['Pressure (bar)','Basket Temp (°C)' , 'Flow (ml/s)', 'Weight Flow (g/s)']
-    legend = ax.legend(lines, labels, loc='upper center', bbox_to_anchor=(0.5, -0.15), 
-            frameon=False, labelcolor='white', ncol=3, handlelength=1.5,
+    # Create combined legend with values below the plot
+    lines = [line1, line2, line4, line5]
+    labels = ['Pressure: 0.0 bar', 'Flow: 0.0 ml/s', 'Weight Flow: 0.0 g/s', 'Basket Temp: 0.0°C' ]
+    legend = ax2.legend(lines, labels, loc='upper center', bbox_to_anchor=(0.5, -0.15), 
+            frameon=False, labelcolor='white', ncol=2, handlelength=1.5,
             )
 
     for text in legend.get_texts():
@@ -122,35 +125,51 @@ def createanimation(espresso_data, fps=10, display_fps=30):
         
         # Use binary search for better performance with large datasets
         # For now, simple linear search since we're dealing with sorted data
-        end_idx = 0
-        for i, t in enumerate(timestamps):
-            if t <= current_time:
-                end_idx = i
-            else:
-                break
+        # end_idx = 0
+        # for i, t in enumerate(timestamps):
+        #     if t <= current_time:
+        #         end_idx = i
+        #     else:
+        #         break
+
+        end_idx = min(range(len(timestamps)), key=lambda i: abs(timestamps[i] - current_time))
         
         if end_idx == 0 and timestamps[0] > current_time:
             # No data points yet
-            # for line in [line1, line2, line3, line4, line5]:
             for line in [line1, line2, line4, line5]:
                 line.set_data([], [])
+            # Update legend with zero values
+            legend.get_texts()[0].set_text('Pressure: 0.0 bar')
+            legend.get_texts()[1].set_text('Flow: 0.0 ml/s')
+            legend.get_texts()[2].set_text('Weight Flow: 0.0 g/s')
+            legend.get_texts()[3].set_text('Basket Temp: 0.0°C')
         else:
             # Get data up to current time (including end_idx)
             x_data = timestamps[:end_idx + 1]
             y1_data = pressure_data[:end_idx + 1]
             y2_data = flow_data[:end_idx + 1]
             y3_data = flow_goal_data[:end_idx + 1]
-            y4_data = flow_goal_weight_data[:end_idx + 1]
+            y4_data = flow_weight_data[:end_idx + 1]
             y5_data = basket_temp_data[:end_idx + 1]
             
             # Update lines for main chart (pressure + flow)
             line1.set_data(x_data, y1_data)
             line2.set_data(x_data, y2_data)
-            # line3.set_data(x_data, y3_data)
             line4.set_data(x_data, y4_data)
             
             # Update line for temperature chart
             line5.set_data(x_data, y5_data)
+            
+            # Update legend with current values
+            current_pressure = y1_data[-1] if y1_data else 0
+            current_flow = y2_data[-1] if y2_data else 0
+            current_weight_flow = y4_data[-1] if y4_data else 0
+            current_temp = y5_data[-1] if y5_data else 0
+            
+            legend.get_texts()[0].set_text(f'Pressure: {current_pressure:.1f} bar')
+            legend.get_texts()[1].set_text(f'Flow: {current_flow:.1f} ml/s')
+            legend.get_texts()[2].set_text(f'Weight Flow: {current_weight_flow:.1f} g/s')
+            legend.get_texts()[3].set_text(f'Basket Temp: {current_temp:.1f}°C')
         
         return line4, line2, line1, line5
 
