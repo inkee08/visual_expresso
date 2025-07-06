@@ -96,8 +96,10 @@ def createanimation(espresso_data, fps=10, display_fps=30):
         ax2.axhline(y=i, color='#c8c8c8', linestyle='-', alpha=0.5, linewidth=1)
 
     # Create combined legend below the plot
-    lines = [line1, line2, line4, line5]
-    labels = ['Pressure (bar)', 'Flow (ml/s)', 'Weight Flow (g/s)', 'Basket Temp (°C)']
+    # lines = [line1, line2, line4, line5]
+    # labels = ['Pressure (bar)', 'Flow (ml/s)', 'Weight Flow (g/s)', 'Basket Temp (°C)']
+    lines = [line1, line5, line2, line4]
+    labels = ['Pressure (bar)','Basket Temp (°C)' , 'Flow (ml/s)', 'Weight Flow (g/s)']
     legend = ax.legend(lines, labels, loc='upper center', bbox_to_anchor=(0.5, -0.15), 
             frameon=False, labelcolor='white', ncol=3, handlelength=1.5,
             )
