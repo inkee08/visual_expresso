@@ -23,19 +23,32 @@ if shots:
                 print(f'{name}_overlay.mov skipped')
             
             profile = shot['profile_title']
-            bean = shot['bean_brand']
+            roaster = shot['bean_brand'].split(" ")[0]
+            bean = shot['bean_brand'][len(roaster)+1:]
             bean_w = shot['bean_weight']
             drink_w = shot['drink_weight']
             grinder = shot['grinder_model']
             grinder_setting = shot['grinder_setting']
             duration = shot['duration']
 
+            replacements = {
+                'FC': 'Flower Child',
+                'B&W': 'Black & White',
+                'TPC': 'The Picky Chemist',
+                'Rogue': 'Rogue Wave',
+                'AG': 'Apollons Gold',
+                'RR': 'Red Rooster',
+            }
+
+            for old, new in replacements.items():
+                roaster = roaster.replace(old, new)
+
             text = f'''
-            Profile: {profile}
+            Roaster: {roaster}
             Bean: {bean}
             Ratio: {bean_w}:{drink_w}
-            Grinder: {grinder}
-            Grinder Setting: {grinder_setting}
+            Profile: {profile}
+            Grinder: {grinder} @ {grinder_setting}
             Duration: {duration}s
             '''
 
