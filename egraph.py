@@ -1,5 +1,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+import matplotlib.patheffects as pe
+from matplotlib import font_manager
 import json
 
 def createanimation(espresso_data, fps=10, display_fps=30):
@@ -20,8 +22,30 @@ def createanimation(espresso_data, fps=10, display_fps=30):
         ax.spines['left'].set_visible(False)
         ax.xaxis.label.set_color('white')
         ax.yaxis.label.set_color('white')
-    ax1.tick_params(colors='black', bottom=False, labelbottom=False, labelsize='small')
-    ax2.tick_params(colors='black', bottom=True, labelbottom=True, labelsize='small')
+    # ax1.tick_params(colors='white', bottom=False, labelbottom=False, labelsize='xx-large')
+    # ax2.tick_params(colors='white', bottom=True, labelbottom=True, labelsize='xx-large')
+    ax1.tick_params(colors='white', bottom=False, labelbottom=False, )
+    ax2.tick_params(colors='white', bottom=True, labelbottom=True, )
+
+    
+    shadoww = 3
+    # Add path effects to ax1 tick labels
+    for label in ax1.get_xticklabels() + ax1.get_yticklabels() + ax2.get_xticklabels() + ax2.get_yticklabels():
+        label.set_fontfamily('DejaVu Sans')
+        label.set_fontsize(18)
+        label.set_fontweight('semibold')  # 'normal', 'bold', 'light'
+        label.set_fontstyle('normal')  # 'normal', 'italic'
+        label.set_path_effects([
+            pe.withStroke(linewidth=shadoww, foreground='black'),
+            pe.Normal()
+        ])
+
+    # # Add path effects to ax2 tick labels
+    # for label in ax2.get_xticklabels() + ax2.get_yticklabels():
+    #     label.set_path_effects([
+    #         pe.withStroke(linewidth=shadoww, foreground='black'),
+    #         pe.Normal()
+    #     ])
 
     # Calculate animation parameters
     timestamps = [float(i) for i in espresso_data['timeframe']]
@@ -48,13 +72,15 @@ def createanimation(espresso_data, fps=10, display_fps=30):
         secondary_ax.spines['left'].set_visible(False)
         secondary_ax.tick_params(colors='none')
 
+    lw = 4
+
     # Initialize empty lines for main chart (pressure + flow data)
-    line1, = ax1.plot([], [], '#05c79d', linewidth=2, label='Pressure (bar)')
-    line2, = ax1_flow.plot([], [], '#1fb7ea', linewidth=2, label='Flow (ml/s)')
-    line4, = ax1_flow_weight.plot([], [], '#8f6400', linewidth=2, label='Weight Flow (g/s)')
+    line1, = ax1.plot([], [], '#05c79d', linewidth=lw, label='Pressure (bar)')
+    line2, = ax1_flow.plot([], [], '#1fb7ea', linewidth=lw, label='Flow (ml/s)')
+    line4, = ax1_flow_weight.plot([], [], '#8f6400', linewidth=lw, label='Weight Flow (g/s)')
     
     # Initialize empty line for temperature chart
-    line5, = ax2.plot([], [], '#ee7733', linewidth=2, label='Basket Temp (°C)')
+    line5, = ax2.plot([], [], '#ee7733', linewidth=lw, label='Basket Temp (°C)')
 
     # Set up the main chart axes ranges (pressure + flow)
     ax1.set_xlim(0, total_time)
@@ -66,7 +92,7 @@ def createanimation(espresso_data, fps=10, display_fps=30):
     # Set up the temperature chart axes ranges
     ax2.set_xlim(0, total_time)
     ax2.set_ylim(min(basket_temp_data) - 2, max(basket_temp_data) + 4)
-    ax2.set_xlabel('Time (seconds)', color='black', fontsize='small')
+    # ax2.set_xlabel('Time (seconds)', color='black', fontsize='small')
 
     # ax1.axhline(y=1, color='red', linestyle='--', alpha=0.7, linewidth=1.5, label='Target Pressure (9 bar)')
     # ax1.axhline(y=3, color='orange', linestyle=':', alpha=0.6, linewidth=1, label='Pre-infusion (6 bar)')
@@ -78,13 +104,35 @@ def createanimation(espresso_data, fps=10, display_fps=30):
         ax2.axhline(y=i, color='#c8c8c8', linestyle='-', alpha=0.5, linewidth=1)
 
     # Create legends for both charts
-    lines1 = [line1, line2, line4]
-    labels1 = ['Pressure (bar)', 'Flow (ml/s)', 'Weight Flow (g/s)']
-    ax1.legend(lines1, labels1, loc='upper right', frameon=True, labelcolor='black', fontsize='small')
+    # lines1 = [line1, line2, line4]
+    # labels1 = ['Pressure (bar)', 'Flow (ml/s)', 'Weight Flow (g/s)']
+    # ax1.legend(lines1, labels1, loc='upper right', frameon=True, labelcolor='black', fontsize='small')
     
-    ax2.legend(loc='upper right', frameon=True, labelcolor='black', fontsize='small')
+    # ax2.legend(loc='upper right', frameon=True, labelcolor='black', fontsize='small')
+
+    # Create combined legend below the plot
+    lines = [line1, line2, line4, line5]
+    labels = ['Pressure (bar)', 'Flow (ml/s)', 'Weight Flow (g/s)', 'Basket Temp (°C)']
+    # font_prop = font_manager.FontProperties(family='DejaVu Sans', size=16, weight='bold')
+    # ax.legend(lines, labels, loc='upper center', bbox_to_anchor=(0.5, -0.15), 
+    #         frameon=False, labelcolor='white', ncol=3, handlelength=1.5,
+    #         prop=font_prop)
+    legend = ax.legend(lines, labels, loc='upper center', bbox_to_anchor=(0.5, -0.15), 
+            frameon=False, labelcolor='white', ncol=3, handlelength=1.5,
+            )
+
+    for text in legend.get_texts():
+        text.set_fontfamily('DejaVu Sans')
+        text.set_fontsize(18)
+        text.set_fontweight('semibold')  # 'normal', 'bold', 'light'
+        text.set_fontstyle('normal')  # 'normal', 'italic'
+        text.set_path_effects([
+            pe.withStroke(linewidth=shadoww, foreground='black'),
+            pe.Normal()
+        ])
 
     plt.tight_layout()
+    plt.subplots_adjust(bottom=0.2)  # Add space at bottom for legend
 
     def animate(frame):
         current_time = frame * time_per_frame
@@ -148,13 +196,21 @@ def savevideo(idx, anim, fps=30):  # Added fps parameter
 
     for writer_name in ['ffmpeg', 'avconv']:
         if writer_name in available_writers:
+            # try:
+            #     anim.save(f'{idx}_espresso_overlay.mp4', writer=writer_name, fps=fps,
+            #              extra_args=['-vcodec', 'libx264', '-pix_fmt', 'yuv420p'])
+            #     print(f"✓ MP4 saved successfully with {writer_name}")
+            #     break
+            # except Exception as e:
+            #     print(f"MP4 save with {writer_name} failed: {e}")
+
             try:
-                anim.save(f'{idx}_espresso_overlay.mp4', writer=writer_name, fps=fps,
-                         extra_args=['-vcodec', 'libx264', '-pix_fmt', 'yuv420p'])
-                print(f"✓ MP4 saved successfully with {writer_name}")
-                break
+                # Try saving as MOV instead of MP4 for better transparency support
+                anim.save(f'{idx}_espresso_overlay.mov', writer='ffmpeg', fps=30,
+                        extra_args=['-vcodec', 'png', '-pix_fmt', 'rgba'])
+                print('MOV saved')
             except Exception as e:
-                print(f"MP4 save with {writer_name} failed: {e}")
+                print(f"error: {e}")
 
 if __name__ == "__main__":
 
@@ -167,6 +223,6 @@ if __name__ == "__main__":
     
     # Uncomment to save files
     # creategif(idx, anim)
-    # savevideo(idx, anim, fps=30)
+    savevideo(idx, anim, fps=30)
     
-    plt.show()
+    # plt.show()
