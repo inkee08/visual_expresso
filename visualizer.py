@@ -1,11 +1,10 @@
-import json
 import requests
 import getpass
 import os
 from dotenv import load_dotenv
-load_dotenv() 
 from requests.auth import HTTPBasicAuth 
 
+load_dotenv() 
 
 def getauth():
     username = os.getenv('visuser')
@@ -28,8 +27,10 @@ def getshots(username, password):
     
     if response.status_code == 200:
         print('Successfully received list of hosts')
+        return response.json()
     else:
         print(f'Unsuccessful, Reason: {response.reason}')
+        return False
 
 def getshot(username, password, id):
     url = f"https://visualizer.coffee/api/shots/{id}"
@@ -37,24 +38,8 @@ def getshot(username, password, id):
     response = requests.get(url, auth=HTTPBasicAuth(username, password))
     
     if response.status_code == 200:
-        print('Successfully received shot data')
-        print(f'{response.json()}')
+        # print('Successfully received shot data')
+        return(response.json())
     else:
-        print(f'Unsuccessful, Reason: {response.reason}')
-
-def parsedata():
-    with open('shots_list_example.json') as f:
-        data = json.load(f)
-
-    # for i in data['data']:
-    #     print(i['id'])
-    username, password = getauth()
-
-    shotid = data['data'][0]['id']
-
-    print(getshot(username, password, shotid))
-
-if __name__ == "__main__":
-    ...
-    parsedata()
-    # getshots()
+        # print(f'Unsuccessful, Reason: {response.reason}')
+        return False
