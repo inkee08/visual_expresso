@@ -1,8 +1,12 @@
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 import matplotlib.patheffects as pe
-from matplotlib import font_manager
+from matplotlib.ticker import MultipleLocator
+# from matplotlib import font_manager
 import json
+
+def integer_formatter(x, pos):
+    return f'{int(x)}'
 
 def createanimation(espresso_data, fps=10, display_fps=30):
     # Set up the figure with transparent background - two subplot layout
@@ -17,21 +21,22 @@ def createanimation(espresso_data, fps=10, display_fps=30):
         ax.spines['top'].set_visible(False)
         ax.spines['right'].set_visible(False)
         ax.spines['bottom'].set_color('#c8c8c8')
-        # ax.spines['bottom'].set_color('none')
-        # ax.spines['left'].set_color('black')
         ax.spines['left'].set_visible(False)
-        ax.xaxis.label.set_color('white')
-        ax.yaxis.label.set_color('white')
-    # ax1.tick_params(colors='white', bottom=False, labelbottom=False, labelsize='xx-large')
-    # ax2.tick_params(colors='white', bottom=True, labelbottom=True, labelsize='xx-large')
-    ax1.tick_params(colors='white', bottom=False, labelbottom=False, )
-    ax2.tick_params(colors='white', bottom=True, labelbottom=True, )
+
+    # Set ticks to appear only at integer locations
+    ax1.yaxis.set_major_locator(MultipleLocator(1))
+    ax2.xaxis.set_major_locator(MultipleLocator(1))
+    ax2.yaxis.set_major_locator(MultipleLocator(5))
+    
+    ax1.tick_params(colors='none', bottom=False, left=True, labelbottom=False, which='both')
+    ax2.tick_params(colors='none', bottom=True, left=True, labelbottom=True, which='both')
 
     
     shadoww = 3
     # Add path effects to ax1 tick labels
     for label in ax1.get_xticklabels() + ax1.get_yticklabels() + ax2.get_xticklabels() + ax2.get_yticklabels():
         label.set_fontfamily('DejaVu Sans')
+        label.set_color('white')
         label.set_fontsize(18)
         label.set_fontweight('semibold')  # 'normal', 'bold', 'light'
         label.set_fontstyle('normal')  # 'normal', 'italic'
@@ -39,13 +44,6 @@ def createanimation(espresso_data, fps=10, display_fps=30):
             pe.withStroke(linewidth=shadoww, foreground='black'),
             pe.Normal()
         ])
-
-    # # Add path effects to ax2 tick labels
-    # for label in ax2.get_xticklabels() + ax2.get_yticklabels():
-    #     label.set_path_effects([
-    #         pe.withStroke(linewidth=shadoww, foreground='black'),
-    #         pe.Normal()
-    #     ])
 
     # Calculate animation parameters
     timestamps = [float(i) for i in espresso_data['timeframe']]
@@ -62,7 +60,6 @@ def createanimation(espresso_data, fps=10, display_fps=30):
     ax1_flow_weight = ax1.twinx()  # Fourth y-axis for flow weight
 
     # Style secondary axes for main chart
-    # for secondary_ax in [ax1_flow, ax1_flow_goal, ax1_flow_weight]:
     for secondary_ax in [ax1_flow, ax1_flow_weight]:
         secondary_ax.set_facecolor('none')
         secondary_ax.patch.set_alpha(0.0)
@@ -92,31 +89,15 @@ def createanimation(espresso_data, fps=10, display_fps=30):
     # Set up the temperature chart axes ranges
     ax2.set_xlim(0, total_time)
     ax2.set_ylim(min(basket_temp_data) - 2, max(basket_temp_data) + 4)
-    # ax2.set_xlabel('Time (seconds)', color='black', fontsize='small')
-
-    # ax1.axhline(y=1, color='red', linestyle='--', alpha=0.7, linewidth=1.5, label='Target Pressure (9 bar)')
-    # ax1.axhline(y=3, color='orange', linestyle=':', alpha=0.6, linewidth=1, label='Pre-infusion (6 bar)')
-    # ax1.axhline(y=5, color='darkred', linestyle='-.', alpha=0.5, linewidth=1, label='Max Pressure (12 bar)')
 
     for i in range(1, int(max(pressure_data) * 1.5)+1):
         ax1.axhline(y=i, color='#c8c8c8', linestyle='-', alpha=0.5, linewidth=1)
-    for i in range(0, int(max(basket_temp_data)) + 5, 4):
+    for i in range(0, int(max(basket_temp_data)) + 5, 5):
         ax2.axhline(y=i, color='#c8c8c8', linestyle='-', alpha=0.5, linewidth=1)
-
-    # Create legends for both charts
-    # lines1 = [line1, line2, line4]
-    # labels1 = ['Pressure (bar)', 'Flow (ml/s)', 'Weight Flow (g/s)']
-    # ax1.legend(lines1, labels1, loc='upper right', frameon=True, labelcolor='black', fontsize='small')
-    
-    # ax2.legend(loc='upper right', frameon=True, labelcolor='black', fontsize='small')
 
     # Create combined legend below the plot
     lines = [line1, line2, line4, line5]
     labels = ['Pressure (bar)', 'Flow (ml/s)', 'Weight Flow (g/s)', 'Basket Temp (°C)']
-    # font_prop = font_manager.FontProperties(family='DejaVu Sans', size=16, weight='bold')
-    # ax.legend(lines, labels, loc='upper center', bbox_to_anchor=(0.5, -0.15), 
-    #         frameon=False, labelcolor='white', ncol=3, handlelength=1.5,
-    #         prop=font_prop)
     legend = ax.legend(lines, labels, loc='upper center', bbox_to_anchor=(0.5, -0.15), 
             frameon=False, labelcolor='white', ncol=3, handlelength=1.5,
             )
@@ -169,8 +150,6 @@ def createanimation(espresso_data, fps=10, display_fps=30):
             # Update line for temperature chart
             line5.set_data(x_data, y5_data)
         
-        # return line1, line2, line3, line4, line5
-        # return line1, line2, line4, line5
         return line4, line2, line1, line5
 
     total_frames = int(total_time * fps) + 1
@@ -196,24 +175,15 @@ def savevideo(idx, anim, fps=30):  # Added fps parameter
 
     for writer_name in ['ffmpeg', 'avconv']:
         if writer_name in available_writers:
-            # try:
-            #     anim.save(f'{idx}_espresso_overlay.mp4', writer=writer_name, fps=fps,
-            #              extra_args=['-vcodec', 'libx264', '-pix_fmt', 'yuv420p'])
-            #     print(f"✓ MP4 saved successfully with {writer_name}")
-            #     break
-            # except Exception as e:
-            #     print(f"MP4 save with {writer_name} failed: {e}")
-
             try:
                 # Try saving as MOV instead of MP4 for better transparency support
-                anim.save(f'{idx}_espresso_overlay.mov', writer='ffmpeg', fps=30,
+                anim.save(f'output/{idx}_overlay.mov', writer='ffmpeg', fps=30,
                         extra_args=['-vcodec', 'png', '-pix_fmt', 'rgba'])
-                print('MOV saved')
+                print(f'{idx} MOV saved')
             except Exception as e:
                 print(f"error: {e}")
 
 if __name__ == "__main__":
-
     with open("shot_data_example.json") as f:
         data = json.load(f)
     idx = data['id']
